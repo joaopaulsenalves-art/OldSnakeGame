@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Jogo da Cobra Neon</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+:root {
+    --bg-deep: #090914;
+    --bg-panel: #0e0e1c;
+    --neon-lime: #39ff88;
+    --neon-cyan: #00e5ff;
+    --neon-magenta: #ff2ec4;
+    --neon-orange: #ff9f1c;
+    --neon-yellow: #ffd700;
+    --grid-line: rgba(255, 255, 255, 0.045);
+    --game-size: min(94vw, 72vh, 600px);
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    background: radial-gradient(circle at 50% 20%, #14142a 0%, var(--bg-deep) 60%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+}
+
+.game-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: var(--game-size);
+    max-width: 600px;
+    padding: 10px;
+}
+
+/* Barra Superior com Pontuação e Pause */
+.top-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.score {
+    color: #ffffff;
+    font-size: clamp(0.95rem, 4vw, 1.4rem);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    white-space: nowrap;
+}
+
+.score--value {
+    color: var(--neon-lime);
+    text-shadow: 0 0 12px rgba(57, 255, 136, 0.7);
+}
+
+.btn-pause-hud {
+    background: rgba(9, 9, 20, 0.75);
+    border: 1px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    width: clamp(36px, 10vw, 42px);
+    height: clamp(36px, 10vw, 42px);
+    border-radius: 50%;
+    display: none; /* Oculto até o jogo iniciar */
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.3);
+    transition: transform 0.15s ease, background 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.btn-pause-hud:hover {
+    transform: scale(1.1);
+    background: rgba(0, 229, 255, 0.2);
+}
+
+.btn-pause-hud .material-symbols-outlined {
+    font-size: clamp(1.3rem, 5vw, 1.6rem);
+}
+
+/* Área do Canvas */
+.canvas-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+}
+
+canvas {
+    background-color: #05050c;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    border-radius: 14px;
+    border: 2px solid rgba(0, 229, 255, 0.25);
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.03),
+        0 0 35px rgba(0, 229, 255, 0.15),
+        0 20px 45px rgba(0, 0, 0, 0.6);
+    touch-action: none;
+    display: block;
+}
+
+/* D-PAD Controles Mobile */
+.dpad {
+    display: none;
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .dpad {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(48px, 60px));
+        grid-template-rows: repeat(2, minmax(48px, 60px));
+        gap: 8px;
+        margin-top: 16px;
+        justify-content: center;
+    }
+
+    .dpad-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(0, 229, 255, 0.3);
+        border-radius: 12px;
+        color: var(--neon-cyan);
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        font-size: clamp(1.3rem, 5.5vw, 1.8rem);
+        font-weight: 800;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .dpad-btn:active {
+        background: rgba(0, 229, 255, 0.25);
+        transform: scale(0.94);
+    }
+
+    .dpad-up   { grid-column: 2; grid-row: 1; }
+    .dpad-left { grid-column: 1; grid-row: 2; }
+    .dpad-down { grid-column: 2; grid-row: 2; }
+    .dpad-right{ grid-column: 3; grid-row: 2; }
+}
+
+@media (max-height: 480px) {
+    :root {
+        --game-size: min(60vh, 94vw, 600px);
+    }
+    .top-bar { margin-bottom: 6px; }
+    .dpad {
+        margin-top: 8px;
+        grid-template-columns: repeat(3, 44px);
+        grid-template-rows: repeat(2, 44px);
+    }
+}
+
+/* Telas Overlays (Start, Skins, Conquistas, Pause, Game Over) */
+.overlay-screen {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: calc(100% - 20px);
+    height: calc(100% - 50px);
+    max-width: 600px;
+    max-height: 600px;
+    background: rgba(6, 6, 14, 0.94);
+    backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    z-index: 10;
+    padding: 16px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+}
+
+.start-screen {
+    z-index: 11;
+}
+
+.overlay-title {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: clamp(1.6rem, 7vw, 2.4rem);
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+    background: linear-gradient(120deg, var(--neon-lime), var(--neon-cyan));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.35));
+}
+
+.game-title {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: clamp(2rem, 10vw, 3.2rem);
+    line-height: 1.05;
+    font-weight: 800;
+    text-align: center;
+    letter-spacing: 2px;
+    margin-bottom: clamp(14px, 4vw, 24px);
+    background: linear-gradient(120deg, var(--neon-lime), var(--neon-cyan) 55%, var(--neon-magenta));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 0 18px rgba(0, 229, 255, 0.35));
+    animation: pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 260px;
+}
+
+.btn-action {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: clamp(10px, 3vw, 12px) clamp(18px, 5vw, 26px);
+    background: linear-gradient(120deg, var(--neon-lime), var(--neon-cyan));
+    color: #05050c;
+    border: none;
+    border-radius: 999px;
+    font-size: clamp(0.85rem, 3.5vw, 1rem);
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    box-shadow: 0 0 20px rgba(57, 255, 136, 0.4);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+    width: 100%;
+}
+
+.btn-action:hover {
+    transform: scale(1.04);
+    box-shadow: 0 0 28px rgba(0, 229, 255, 0.6);
+}
+
+.btn-action:active {
+    transform: scale(0.97);
+}
+
+.btn-action.btn-secondary {
+    background: transparent;
+    border: 2px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    box-shadow: 0 0 12px rgba(0, 229, 255, 0.2);
+}
+
+.btn-action.btn-secondary:hover {
+    background: rgba(0, 229, 255, 0.15);
+    box-shadow: 0 0 20px rgba(0, 229, 255, 0.4);
+}
+
+.btn-action .material-symbols-outlined {
+    font-size: 1.4rem;
+}
+
+/* Painéis de Conteúdo (Skins e Conquistas) */
+.panel-content {
+    width: 100%;
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 14px;
+    padding-right: 6px;
+    display: grid;
+    gap: 10px;
+}
+
+.panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+.panel-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+.panel-content::-webkit-scrollbar-thumb {
+    background: var(--neon-cyan);
+    border-radius: 10px;
+}
+
+/* Grid de Seleção de Skins */
+.skins-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+}
+
+.skin-card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 10px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.skin-card:hover {
+    border-color: var(--neon-cyan);
+    background: rgba(0, 229, 255, 0.08);
+}
+
+.skin-card.selected {
+    border-color: var(--neon-lime);
+    background: rgba(57, 255, 136, 0.12);
+    box-shadow: 0 0 14px rgba(57, 255, 136, 0.3);
+}
+
+.skin-card canvas {
+    width: 60px;
+    height: 60px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+    background: #05050c;
+}
+
+.skin-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #e0e0e0;
+}
+
+.skin-card.selected .skin-name {
+    color: var(--neon-lime);
+}
+
+/* Lista de Conquistas */
+.achievements-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.achievement-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 10px;
+    text-align: left;
+    transition: all 0.2s ease;
+}
+
+.achievement-card.unlocked {
+    background: rgba(57, 255, 136, 0.06);
+    border-color: rgba(57, 255, 136, 0.3);
+}
+
+.achievement-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    flex-shrink: 0;
+}
+
+.achievement-card.unlocked .achievement-icon {
+    background: rgba(57, 255, 136, 0.2);
+    color: var(--neon-lime);
+    box-shadow: 0 0 12px rgba(57, 255, 136, 0.4);
+}
+
+.achievement-info {
+    flex: 1;
+}
+
+.achievement-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 2px;
+}
+
+.achievement-card.unlocked .achievement-title {
+    color: var(--neon-lime);
+}
+
+.achievement-desc {
+    font-size: 0.72rem;
+    color: #a0a0b0;
+}
+
+.achievement-status {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 99px;
+    text-transform: uppercase;
+}
+
+.achievement-card.unlocked .achievement-status {
+    background: rgba(57, 255, 136, 0.2);
+    color: var(--neon-lime);
+}
+
+.achievement-card.locked .achievement-status {
+    background: rgba(255, 255, 255, 0.05);
+    color: #777;
+}
+
+/* Notification de Conquista Unlocked Popup */
+.toast-achievement {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    opacity: 0;
+    background: rgba(9, 9, 20, 0.95);
+    border: 2px solid var(--neon-lime);
+    border-radius: 50px;
+    padding: 8px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 100;
+    box-shadow: 0 0 20px rgba(57, 255, 136, 0.5);
+    transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    pointer-events: none;
+}
+
+.toast-achievement.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(20px);
+}
+
+.toast-achievement .material-symbols-outlined {
+    color: var(--neon-lime);
+}
+
+.toast-text {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+}
+
+.toast-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    color: var(--neon-lime);
+    font-weight: 800;
+}
+
+.toast-name {
+    font-size: 0.85rem;
+    color: #fff;
+    font-weight: 600;
+}
+
+/* Game Over & Menus de Overlay */
+.menu-screen, .pause-screen, .skins-screen, .achievements-screen {
+    display: none;
+}
+
+.game-over {
+    font-family: 'Baloo 2', sans-serif;
+    font-size: clamp(1.7rem, 9vw, 2.6rem);
+    font-weight: 800;
+    color: var(--neon-magenta);
+    margin-bottom: 12px;
+    text-shadow: 0 0 16px rgba(255, 46, 196, 0.6);
+    letter-spacing: 1px;
+}
+
+.final-score-container {
+    font-size: clamp(1rem, 4.5vw, 1.4rem);
+    color: #ffffff;
+    margin-bottom: clamp(14px, 5vw, 26px);
+}
+
+.final-score {
+    font-weight: 600;
+    margin-right: 6px;
+    color: #b9b9c9;
+}
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- Toast de Notificação de Conquista Desbloqueada -->
+        <div class="toast-achievement" id="toastAchievement">
+            <span class="material-symbols-outlined">workspace_premium</span>
+            <div class="toast-text">
+                <span class="toast-title">Conquista Desbloqueada!</span>
+                <span class="toast-name" id="toastName">Nome da Conquista</span>
+            </div>
+        </div>
+
+        <!-- Tela de Início (Start Screen) -->
+        <div class="overlay-screen start-screen">
+            <span class="game-title">JOGO DA<br>COBRA</span>
+            <div class="menu-buttons">
+                <button class="btn-action btn-start">
+                    <span class="material-symbols-outlined">play_circle</span>
+                    JOGAR
+                </button>
+                <button class="btn-action btn-secondary btn-open-skins">
+                    <span class="material-symbols-outlined">palette</span>
+                    SKINS
+                </button>
+                <button class="btn-action btn-secondary btn-open-achievements">
+                    <span class="material-symbols-outlined">trophy</span>
+                    CONQUISTAS
+                </button>
+            </div>
+        </div>
+
+        <!-- Tela de Seleção de Skins -->
+        <div class="overlay-screen skins-screen">
+            <span class="overlay-title">ESCOLHER SKIN</span>
+            <div class="panel-content skins-grid" id="skinsContainer">
+                <!-- Cards de Skin injetados dinamicamente via JS -->
+            </div>
+            <button class="btn-action btn-secondary btn-close-overlay">
+                <span class="material-symbols-outlined">arrow_back</span>
+                VOLTAR
+            </button>
+        </div>
+
+        <!-- Tela de Conquistas -->
+        <div class="overlay-screen achievements-screen">
+            <span class="overlay-title">CONQUISTAS</span>
+            <div class="panel-content achievements-list" id="achievementsContainer">
+                <!-- Conquistas injetadas dinamicamente via JS -->
+            </div>
+            <button class="btn-action btn-secondary btn-close-overlay">
+                <span class="material-symbols-outlined">arrow_back</span>
+                VOLTAR
+            </button>
+        </div>
+
+        <!-- Tela de Pause -->
+        <div class="overlay-screen pause-screen">
+            <span class="overlay-title">JOGO PAUSADO</span>
+            <div class="menu-buttons">
+                <button class="btn-action btn-resume">
+                    <span class="material-symbols-outlined">play_arrow</span>
+                    CONTINUAR
+                </button>
+                <button class="btn-action btn-secondary btn-quit-to-menu">
+                    <span class="material-symbols-outlined">home</span>
+                    MENU PRINCIPAL
+                </button>
+            </div>
+        </div>
+
+        <!-- Tela de Game Over -->
+        <div class="overlay-screen menu-screen">
+            <span class="game-over">GAME OVER</span>
+            <div class="final-score-container">
+                <span class="final-score">SCORE:</span>
+                <span>00</span>
+            </div>
+            <div class="menu-buttons">
+                <button class="btn-action btn-play">
+                    <span class="material-symbols-outlined">play_circle</span>
+                    JOGAR NOVAMENTE
+                </button>
+                <button class="btn-action btn-secondary btn-quit-to-menu">
+                    <span class="material-symbols-outlined">home</span>
+                    MENU PRINCIPAL
+                </button>
+            </div>
+        </div>
+
+        <!-- Placar e Botão de Pause Reposicionado -->
+        <div class="top-bar">
+            <div class="score">SCORE: <span class="score--value">00</span></div>
+            <button class="btn-pause-hud" id="btnPauseHud" aria-label="Pausar Jogo">
+                <span class="material-symbols-outlined">pause</span>
+            </button>
+        </div>
+        
+        <div class="canvas-wrapper">
+            <canvas height="600" width="600"></canvas>
+        </div>
+
+        <!-- Controles em tela (dispositivos touch) -->
+        <div class="dpad" aria-hidden="true">
+            <button class="dpad-btn dpad-up" data-dir="up" aria-label="Cima">&#8593;</button>
+            <button class="dpad-btn dpad-left" data-dir="left" aria-label="Esquerda">&#8592;</button>
+            <button class="dpad-btn dpad-right" data-dir="right" aria-label="Direita">&#8594;</button>
+            <button class="dpad-btn dpad-down" data-dir="down" aria-label="Baixo">&#8595;</button>
+        </div>
+    </div>
+
+    <script>
+const canvas = document.querySelector("canvas");
+const ctx = canvas.getContext("2d");
+
+const audio = new Audio('assets/audio.mp3');
+const bgMusic = new Audio('assets/musica-fundo.mp3');
+bgMusic.loop = true;
+bgMusic.volume = 0.4;
+
+const playBgMusic = () => {
+    bgMusic.currentTime = 0;
+    bgMusic.play().catch(() => {});
+};
+
+const stopBgMusic = () => {
+    bgMusic.pause();
+};
+
+const score = document.querySelector(".score--value");
+const finalScore = document.querySelector(".final-score + span");
+
+// Overlays e Botões
+const startScreen = document.querySelector(".start-screen");
+const skinsScreen = document.querySelector(".skins-screen");
+const achievementsScreen = document.querySelector(".achievements-screen");
+const pauseScreen = document.querySelector(".pause-screen");
+const menu = document.querySelector(".menu-screen");
+
+const buttonStart = document.querySelector(".btn-start");
+const buttonPlay = document.querySelector(".btn-play");
+const buttonOpenSkins = document.querySelector(".btn-open-skins");
+const buttonOpenAchievements = document.querySelector(".btn-open-achievements");
+const buttonResume = document.querySelector(".btn-resume");
+const buttonPauseHud = document.getElementById("btnPauseHud");
+const buttonsQuitToMenu = document.querySelectorAll(".btn-quit-to-menu");
+const buttonsCloseOverlay = document.querySelectorAll(".btn-close-overlay");
+
+const skinsContainer = document.getElementById("skinsContainer");
+const achievementsContainer = document.getElementById("achievementsContainer");
+const toastAchievement = document.getElementById("toastAchievement");
+const toastName = document.getElementById("toastName");
+
+const size = 30;
+
+let snake = [
+    { x: 270, y: 240 },
+    { x: 300, y: 240 },
+    { x: 330, y: 240 }
+];
+
+let foodsEatenSession = 0;
+let isGameRunning = false;
+let isPaused = false;
+let currentSkinIndex = 0;
+let toastTimeout; // Controle para evitar que a conquista trave na tela
+
+// ==================== 10 SKINS EXCLUSIVAS ====================
+const skins = [
+    {
+        id: "classic", name: "Neon Clássica", glow: "#7dff8c",
+        drawHead: (ctx, s) => {
+            const headGrad = ctx.createLinearGradient(-s / 2, 0, s / 2, 0);
+            headGrad.addColorStop(0, "#1fbf5c"); headGrad.addColorStop(1, "#7dff8c");
+            ctx.fillStyle = headGrad; ctx.beginPath();
+            ctx.moveTo(s * 0.55, 0); ctx.quadraticCurveTo(s * 0.3, -s * 0.42, -s * 0.4, -s * 0.34);
+            ctx.quadraticCurveTo(-s * 0.55, 0, -s * 0.4, s * 0.34); ctx.quadraticCurveTo(s * 0.3, s * 0.42, s * 0.55, 0); ctx.fill();
+        },
+        drawBody: (ctx, s, t) => {
+            const r = Math.round(57 + (0 - 57) * t); const g = Math.round(255 + (197 - 255) * t); const b = Math.round(136 + (255 - 136) * t);
+            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+            roundedRectPath(ctx, -s * 0.41, -s * 0.41, s * 0.82, s * 0.82, 6); ctx.fill();
+        }
+    },
+    {
+        id: "fire", name: "Chama Vulcânica", glow: "#ff3300",
+        drawHead: (ctx, s) => {
+            const grad = ctx.createLinearGradient(-s / 2, 0, s / 2, 0);
+            grad.addColorStop(0, "#ff0000"); grad.addColorStop(0.5, "#ff6600"); grad.addColorStop(1, "#ffcc00");
+            ctx.fillStyle = grad; ctx.beginPath();
+            ctx.moveTo(s * 0.6, 0); ctx.lineTo(-s * 0.4, -s * 0.4); ctx.lineTo(-s * 0.3, 0); ctx.lineTo(-s * 0.4, s * 0.4); ctx.closePath(); ctx.fill();
+        },
+        drawBody: (ctx, s, t) => {
+            ctx.fillStyle = t % 0.2 < 0.1 ? "#ff2200" : "#ff9900";
+            roundedRectPath(ctx, -s * 0.4, -s * 0.4, s * 0.8, s * 0.8, 4); ctx.fill();
+            ctx.fillStyle = "#ffee00"; ctx.beginPath(); ctx.arc(0, 0, s * 0.15, 0, Math.PI * 2); ctx.fill();
+        }
+    },
+    {
+        id: "cyber", name: "Cyber Matrix", glow: "#00ff66",
+        drawHead: (ctx, s) => {
+            ctx.fillStyle = "#002b11"; ctx.strokeStyle = "#00ff66"; ctx.lineWidth = 2;
+            ctx.fillRect(-s * 0.4, -s * 0.4, s * 0.8, s * 0.8); ctx.strokeRect(-s * 0.4, -s * 0.4, s * 0.8, s * 0.8);
+        },
+        drawBody: (ctx, s, t) => {
+            ctx.fillStyle = "#051a0e"; ctx.strokeStyle = "#00ff66"; ctx.lineWidth = 1.5;
+            ctx.fillRect(-s * 0.38, -s * 0.38, s * 0.76, s * 0.76); ctx.strokeRect(-s * 0.38, -s * 0.38, s * 0.76, s * 0.76);
+            ctx.fillStyle = "#00ff66"; ctx.fillRect(-s * 0.1, -s * 0.1, s * 0.2, s * 0.2);
+        }
+    },
+    {
+        id: "gold", name: "Rei do Ouro", glow: "#ffd700",
+        drawHead: (ctx, s) => {
+            const grad = ctx.createLinearGradient(-s / 2, -s / 2, s / 2, s / 2);
+            grad.addColorStop(0, "#ffe600"); grad.addColorStop(0.5, "#b8860b"); grad.addColorStop(1, "#fff8dc");
+            ctx.fillStyle = grad; ctx.beginPath(); ctx.arc(0, 0, s * 0.45, 0, Math.PI * 2); ctx.fill();
+        },
+        drawBody: (ctx, s, t) => {
+            const grad = ctx.createLinearGradient(-s / 2, 0, s / 2, 0);
+            grad.addColorStop(0, "#d4af37"); grad.addColorStop(0.5, "#fff2a3"); grad.addColorStop(1, "#aa7c11");
+            ctx.fillStyle = grad; roundedRectPath(ctx, -s * 0.4, -s * 0.4, s * 0.8, s * 0.8, 8); ctx.fill();
+        }
+    },
+    {
+        id: "rainbow", name: "Arco-Íris Neon", glow: "#ff00ff",
+        drawHead: (ctx, s) => {
+            ctx.fillStyle = `hsl(${(Date.now() / 10) % 360}, 100%, 60%)`;
+            ctx.beginPath(); ctx.arc(0, 0, s * 0.45, 0, Math.PI * 2); ctx.fill();
+        },
+        drawBody: (ctx, s, t) => {
+            ctx.fillStyle = `hsl(${(t * 360 + Date.now() / 12) % 360}, 100%, 55%)`;
+            roundedRectPath(ctx, -s * 0.4, -s * 0.4, s * 0.8, s * 0.8, 7); ctx.fill();
+        }
+    },
+    {
+        id: "ghost", name: "Fantasma Gelo", glow: "#00e5ff",
+        drawHead: (ctx, s) => {
+            ctx.fillStyle = "rgba(0, 229, 255, 0.75)"; ctx.beginPath(); ctx.arc(0, 0, s * 0.42, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#ffffff"; ctx.beginPath(); ctx.arc(0, 0, s * 0.2, 0, Math.PI * 2); ctx.fill();
+        },
+        drawBody: (ctx, s, t) => {
+            ctx.fillStyle = "rgba(180, 245, 255, 0.55)"; ctx.strokeStyle = "#00e5ff"; ctx.lineWidth = 1.5;
+            roundedRectPath(ctx, -s * 0.38, -s * 0.38, s * 0.76, s * 0.76, 10); ctx.fill(); ctx.stroke();
+        }
+    },
+    {
+        id: "poison", name: "Veneno Ácido", glow: "#ff00ff",
+        drawHead: (ctx, s) => {
+            ctx.fillStyle = "#7b2cbf"; ctx.beginPath(); ctx.arc(0, 0, s * 0.44, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#39ff88"; ctx.beginPath(); ctx.arc(s * 0.1, -s * 0.1, s * 0.15, 0, Math.PI * 2); ctx.fill();
+        },
+        drawBody: (ctx, s, t) => {
+            ctx.fillStyle = "#5a189a"; roundedRectPath(ctx, -s * 0.4, -s * 0.4, s * 0.8, s * 0.8, 6); ctx.fill();
+            ctx.fillStyle = "#39ff88"; ctx.beginPath(); ctx.arc(-s * 0.1, s * 0.1, s * 0.12, 0, Math.PI * 2); ctx.fill();
+        }
+    },
+    {
+        id: "galaxy", name: "Galáxia Cósmica", glow: "#9d4edd",
+        drawHead: (ctx, s) => {
+            const g = ctx.createRadialGradient(0, 0, 2, 0, 0, s * 0.5);
+            g.addColorStop(0, "#e0aaff"); g.addColorStop(0.6, "#3c096c"); g.addColorStop(1, "#10002b");
+            ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, s * 0.45, 0, Math.PI * 2); ctx.fill();
+        },
+        drawBody: (ctx, s, t) => {
+            ctx.fillStyle = "#240046"; roundedRectPath(ctx, -s * 0.4, -s * 0.4, s * 0.8, s * 0.8, 6); ctx.fill();
+            ctx.fillStyle = "#ffffff"; ctx.fillRect(-s * 0.2, -s * 0.1, 3, 3); ctx.fillRect(s * 0.15, s * 0.15, 2, 2);
+        }
+    },
+    {
+        id: "tiger", name: "Tigre Selvagem", glow: "#ff7700",
+        drawHead: (ctx, s) => {
+            ctx.fillStyle = "#ff7700"; ctx.beginPath(); ctx.arc(0, 0, s * 0.44, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = "#1a0d00"; ctx.fillRect(-s * 0.3, -s * 0.1, s * 0.6, s * 0.2);
+        },
+        drawBody: (ctx, s, t) => {
+            ctx.fillStyle = "#ff8800"; roundedRectPath(ctx, -s * 0.4, -s * 0.4, s * 0.8, s * 0.8, 5); ctx.fill();
+            ctx.fillStyle = "#221100"; ctx.beginPath(); ctx.moveTo(-s * 0.3, -s * 0.4); ctx.lineTo(0, 0); ctx.lineTo(-s * 0.3, s * 0.4); ctx.fill();
+        }
+    },
+    {
+        id: "electric", name: "Raio Elétrico", glow: "#00d2ff",
+        drawHead: (ctx, s) => {
+            ctx.fillStyle = "#00d2ff"; ctx.beginPath(); ctx.arc(0, 0, s * 0.45, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 2; ctx.beginPath();
+            ctx.moveTo(-s * 0.2, -s * 0.2); ctx.lineTo(0, 0); ctx.lineTo(-s * 0.1, 0); ctx.lineTo(s * 0.2, s * 0.2); ctx.stroke();
+        },
+        drawBody: (ctx, s, t) => {
+            ctx.fillStyle = "#0077b6"; roundedRectPath(ctx, -s * 0.4, -s * 0.4, s * 0.8, s * 0.8, 5); ctx.fill();
+            ctx.strokeStyle = "#90e0ef"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-s * 0.3, 0); ctx.lineTo(s * 0.3, 0); ctx.stroke();
+        }
+    }
+];
+
+// ==================== SISTEMA DE CONQUISTAS PERSISTENTES ====================
+const achievementsData = [
+    { id: "first_eat", title: "Primeira Mordida", desc: "Coma a primeira comida no jogo.", unlocked: false },
+    { id: "score_50", title: "Apetite Neon", desc: "Alcançou 50 pontos numa partida.", unlocked: false },
+    { id: "score_150", title: "Gourmet das Galáxias", desc: "Alcançou 150 pontos numa partida.", unlocked: false },
+    { id: "score_300", title: "Lenda da Cobra", desc: "Alcançou 300 pontos numa partida.", unlocked: false },
+    { id: "skin_change", title: "Estiloso", desc: "Trocou a skin da cobra no menu.", unlocked: false },
+    { id: "fast_5", title: "Banquete", desc: "Coma 5 comidas na mesma partida.", unlocked: false },
+    { id: "snake_size_10", title: "Cobra Gigante", desc: "Chegue a um tamanho de 10 segmentos.", unlocked: false }
+];
+
+const loadAchievements = () => {
+    const saved = localStorage.getItem("snake_achievements_v1");
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            achievementsData.forEach(ach => {
+                if (parsed[ach.id]) ach.unlocked = true;
+            });
+        } catch (e) {}
+    }
+};
+
+const saveAchievements = () => {
+    const obj = {};
+    achievementsData.forEach(ach => obj[ach.id] = ach.unlocked);
+    localStorage.setItem("snake_achievements_v1", JSON.stringify(obj));
+};
+
+const unlockAchievement = (id) => {
+    const ach = achievementsData.find(a => a.id === id);
+    if (ach && !ach.unlocked) {
+        ach.unlocked = true;
+        saveAchievements();
+        showToast(ach.title);
+        renderAchievementsList();
+    }
+};
+
+const showToast = (name) => {
+    // Limpa a fila de animação caso outra conquista seja liberada ao mesmo tempo
+    clearTimeout(toastTimeout);
+    
+    toastName.innerText = name;
+    toastAchievement.classList.add("show");
+    
+    toastTimeout = setTimeout(() => {
+        toastAchievement.classList.remove("show");
+    }, 3500);
+};
+
+// ==================== HELPERS DE DESENHO ====================
+const roundedRectPath = (ctx, x, y, w, h, r) => {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+};
+
+const renderSkinsMenu = () => {
+    skinsContainer.innerHTML = "";
+    skins.forEach((skin, index) => {
+        const card = document.createElement("div");
+        card.className = `skin-card ${index === currentSkinIndex ? 'selected' : ''}`;
+        
+        const previewCanvas = document.createElement("canvas");
+        previewCanvas.width = 60;
+        previewCanvas.height = 60;
+        const pctx = previewCanvas.getContext("2d");
+
+        pctx.translate(30, 30);
+        pctx.shadowColor = skin.glow;
+        pctx.shadowBlur = 8;
+        skin.drawBody(pctx, 40, 0.2);
+        skin.drawHead(pctx, 40);
+
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "skin-name";
+        nameSpan.innerText = skin.name;
+
+        card.appendChild(previewCanvas);
+        card.appendChild(nameSpan);
+
+        card.addEventListener("click", () => {
+            currentSkinIndex = index;
+            renderSkinsMenu();
+            unlockAchievement("skin_change");
+        });
+
+        skinsContainer.appendChild(card);
+    });
+};
+
+const renderAchievementsList = () => {
+    achievementsContainer.innerHTML = "";
+    achievementsData.forEach(ach => {
+        const card = document.createElement("div");
+        card.className = `achievement-card ${ach.unlocked ? 'unlocked' : 'locked'}`;
+        card.innerHTML = `
+            <div class="achievement-icon">
+                <span class="material-symbols-outlined">${ach.unlocked ? 'workspace_premium' : 'lock'}</span>
+            </div>
+            <div class="achievement-info">
+                <div class="achievement-title">${ach.title}</div>
+                <div class="achievement-desc">${ach.desc}</div>
+            </div>
+            <div class="achievement-status">${ach.unlocked ? 'Concluída' : 'Bloqueada'}</div>
+        `;
+        achievementsContainer.appendChild(card);
+    });
+};
+
+// ==================== COMIDAS DA VIDA REAL ====================
+// Mais detalhadas e parecidas com comida através de formas do Canvas!
+const foodProfiles = [
+    {
+        name: "apple", glow: "#8bff7a", draw: (s) => {
+            const r = s * 0.36;
+            ctx.beginPath(); ctx.arc(0, -r*0.2, r, 0, Math.PI * 2); ctx.fillStyle = "#e0272f"; ctx.fill(); // maça vermelha
+            ctx.beginPath(); ctx.ellipse(r*0.35, -r*1.1, r*0.3, r*0.15, -0.5, 0, Math.PI*2); ctx.fillStyle = "#4ad66d"; ctx.fill(); // folha verde
+            ctx.strokeStyle = "#5c3a21"; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(0,-r*0.8); ctx.quadraticCurveTo(r*0.1,-r*1.1, r*0.2,-r*1.2); ctx.stroke(); // talo
+        }
+    },
+    {
+        name: "pizza", glow: "#ffb020", draw: (s) => {
+            const r = s * 0.5;
+            ctx.save(); ctx.rotate(Math.PI / 4);
+            ctx.beginPath(); ctx.moveTo(0, -r * 0.15); ctx.lineTo(-r * 0.85, r * 0.85); ctx.lineTo(r * 0.85, r * 0.85); ctx.closePath();
+            ctx.fillStyle = "#f6c453"; ctx.fill(); // Borda
+            ctx.beginPath(); ctx.moveTo(0, -r * 0.05); ctx.lineTo(-r * 0.7, r * 0.75); ctx.lineTo(r * 0.7, r * 0.75); ctx.closePath();
+            ctx.fillStyle = "#ffd35c"; ctx.fill(); // Queijo
+            ctx.fillStyle = "#e0433c"; // Pepperoni
+            [[-r*0.2, r*0.2], [r*0.2, r*0.3], [0, r*0.5]].forEach(([px, py]) => { ctx.beginPath(); ctx.arc(px, py, r*0.15, 0, Math.PI*2); ctx.fill(); });
+            ctx.restore();
+        }
+    },
+    {
+        name: "donut", glow: "#ff6fb0", draw: (s) => {
+            const r = s * 0.45;
+            ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = "#c17a3f"; ctx.fill(); // Massa
+            ctx.beginPath(); ctx.arc(0, -r * 0.05, r * 0.86, 0, Math.PI * 2); ctx.fillStyle = "#ff6fb0"; ctx.fill(); // Cobertura
+            ctx.beginPath(); ctx.arc(0, 0, r * 0.3, 0, Math.PI * 2); ctx.fillStyle = "#05050c"; ctx.fill(); // Furo (transparente simulado)
+            ctx.fillStyle = "#fff"; ctx.fillRect(-r*0.4, -r*0.4, 4, 1.5); ctx.fillStyle = "#ffe066"; ctx.fillRect(r*0.3, -r*0.2, 1.5, 4); // Granulado
+        }
+    },
+    {
+        name: "burger", glow: "#ffcf4d", draw: (s) => {
+            const w = s * 0.8;
+            ctx.fillStyle = "#d98a3d"; roundedRectPath(ctx, -w/2, s*0.16, w, s*0.14, 4); ctx.fill(); // Pão Base
+            ctx.fillStyle = "#5a3421"; roundedRectPath(ctx, -w/2, 0, w, s*0.14, 4); ctx.fill(); // Carne
+            ctx.fillStyle = "#5bd15b"; roundedRectPath(ctx, -w/2 - 2, -s*0.05, w + 4, s*0.08, 3); ctx.fill(); // Alface
+            ctx.fillStyle = "#e8a154"; ctx.beginPath(); ctx.moveTo(-w/2, -s*0.03); ctx.quadraticCurveTo(0, -s*0.45, w/2, -s*0.03); ctx.closePath(); ctx.fill(); // Pão Topo
+            ctx.fillStyle = "#fff3d6"; // Gergelim
+            [[-w*0.2, -s*0.2], [0, -s*0.25], [w*0.2, -s*0.2]].forEach(([px, py]) => { ctx.beginPath(); ctx.ellipse(px, py, 1.5, 1, 0, 0, Math.PI*2); ctx.fill(); });
+        }
+    },
+    {
+        name: "watermelon", glow: "#ff4d4d", draw: (s) => {
+            const r = s * 0.45;
+            ctx.save(); ctx.rotate(Math.PI / 4);
+            ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI); ctx.fillStyle = "#2e8b57"; ctx.fill(); // Casca Verde
+            ctx.beginPath(); ctx.arc(0, 0, r * 0.85, 0, Math.PI); ctx.fillStyle = "#ff4d4d"; ctx.fill(); // Parte Vermelha
+            ctx.fillStyle = "#111"; // Sementes
+            [[-r*0.4, r*0.3], [0, r*0.5], [r*0.4, r*0.3]].forEach(([px, py]) => { ctx.beginPath(); ctx.arc(px, py, 1.5, 0, Math.PI*2); ctx.fill(); });
+            ctx.restore();
+        }
+    },
+    {
+        name: "cookie", glow: "#c19a6b", draw: (s) => {
+            const r = s * 0.45;
+            ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fillStyle = "#d1a877"; ctx.fill(); // Massa
+            ctx.fillStyle = "#4a2511"; // Gotas de Chocolate
+            [[-r*0.4,-r*0.3], [r*0.3,-r*0.4], [0,0], [-r*0.5,r*0.2], [r*0.4,r*0.4], [-r*0.1,r*0.5]].forEach(([px,py]) => {
+                ctx.beginPath(); ctx.arc(px, py, r*0.18, 0, Math.PI*2); ctx.fill();
+            });
+        }
+    },
+    {
+        name: "sushi", glow: "#ffffff", draw: (s) => {
+            const w = s * 0.65; const h = s * 0.55;
+            ctx.fillStyle = "#1a1a1a"; roundedRectPath(ctx, -w/2, -h/2, w, h, 6); ctx.fill(); // Alga Negra Nori
+            ctx.fillStyle = "#f5f5f5"; ctx.beginPath(); ctx.arc(0, 0, h*0.38, 0, Math.PI*2); ctx.fill(); // Arroz Branco
+            ctx.fillStyle = "#ff7f50"; ctx.beginPath(); ctx.arc(0, 0, h*0.18, 0, Math.PI*2); ctx.fill(); // Salmão Laranja Central
+        }
+    },
+    {
+        name: "cherry", glow: "#ff0033", draw: (s) => {
+            const r = s * 0.22;
+            ctx.strokeStyle = "#4ad66d"; ctx.lineWidth = 2; // Talos verdes
+            ctx.beginPath(); ctx.moveTo(0, -s*0.35); ctx.quadraticCurveTo(-s*0.1, -s*0.1, -s*0.2, s*0.1); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(0, -s*0.35); ctx.quadraticCurveTo(s*0.1, -s*0.1, s*0.2, s*0.1); ctx.stroke();
+            ctx.fillStyle = "#cc0000"; // Cerejas Vermelhas
+            ctx.beginPath(); ctx.arc(-s*0.2, s*0.1, r, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(s*0.2, s*0.1, r, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = "rgba(255,255,255,0.4)"; // Brilho para parecer suculenta
+            ctx.beginPath(); ctx.arc(-s*0.25, s*0.05, r*0.3, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(s*0.15, s*0.05, r*0.3, 0, Math.PI*2); ctx.fill();
+        }
+    }
+];
+
+const incrementScore = () => {
+    const currentScore = +score.innerText + 10;
+    score.innerText = currentScore;
+
+    if (currentScore >= 50) unlockAchievement("score_50");
+    if (currentScore >= 150) unlockAchievement("score_150");
+    if (currentScore >= 300) unlockAchievement("score_300");
+};
+
+const randomNumber = (min, max) => Math.round(Math.random() * (max - min) + min);
+const randomPosition = () => Math.round(randomNumber(0, canvas.width - size) / 30) * 30;
+
+let food = {
+    x: randomPosition(),
+    y: randomPosition(),
+    profile: foodProfiles[0],
+};
+
+let direction;
+let loopID;
+
+const drawFood = () => {
+    const { x, y, profile } = food;
+    const cx = x + size / 2;
+    const cy = y + size / 2;
+    const pulse = 1 + Math.sin(Date.now() / 220) * 0.06;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(pulse, pulse);
+    ctx.shadowColor = profile.glow;
+    ctx.shadowBlur = 16;
+    profile.draw(size);
+    ctx.restore();
+    ctx.shadowBlur = 0;
+};
+
+// ==================== DESENHO DA COBRA ====================
+const dirAngle = { right: 0, down: Math.PI / 2, left: Math.PI, up: -Math.PI / 2 };
+
+const drawSnakeHead = (position, angle) => {
+    const cx = position.x + size / 2;
+    const cy = position.y + size / 2;
+    const skin = skins[currentSkinIndex];
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle);
+    ctx.shadowColor = skin.glow;
+    ctx.shadowBlur = 14;
+
+    skin.drawHead(ctx, size);
+    ctx.shadowBlur = 0;
+
+    // olhos padrão
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(size * 0.1, -size * 0.16, 3.8, 0, Math.PI * 2);
+    ctx.arc(size * 0.1, size * 0.16, 3.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#0a0a14";
+    ctx.beginPath();
+    ctx.arc(size * 0.14, -size * 0.16, 1.8, 0, Math.PI * 2);
+    ctx.arc(size * 0.14, size * 0.16, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+};
+
+const drawSnakeBody = (position, index, total) => {
+    const cx = position.x + size / 2;
+    const cy = position.y + size / 2;
+    const skin = skins[currentSkinIndex];
+    const t = total > 1 ? index / (total - 1) : 0;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.shadowColor = skin.glow;
+    ctx.shadowBlur = 8;
+    skin.drawBody(ctx, size, t);
+    ctx.restore();
+};
+
+const drawSnake = () => {
+    const total = snake.length;
+    snake.forEach((position, index) => {
+        if (index !== total - 1) drawSnakeBody(position, index, total);
+    });
+    const head = snake[total - 1];
+    drawSnakeHead(head, dirAngle[direction] ?? 0);
+};
+
+const moveSnake = () => {
+    if (!direction) return;
+
+    const head = snake[snake.length - 1];
+
+    if (direction == "right") snake.push({ x: head.x + size, y: head.y });
+    if (direction == "left") snake.push({ x: head.x - size, y: head.y });
+    if (direction == "down") snake.push({ x: head.x, y: head.y + size });
+    if (direction == "up") snake.push({ x: head.x, y: head.y - size });
+
+    snake.shift();
+};
+
+const drawGrid = () => {
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "#191919";
+    for (let i = 30; i < canvas.width; i += 30) {
+        ctx.beginPath(); ctx.lineTo(i, 0); ctx.lineTo(i, 600); ctx.stroke();
+        ctx.beginPath(); ctx.lineTo(0, i); ctx.lineTo(600, i); ctx.stroke();
+    }
+};
+
+const checkEat = () => {
+    const head = snake[snake.length - 1];
+
+    if (head.x == food.x && head.y == food.y) {
+        snake.push({ x: head.x, y: head.y });
+        incrementScore();
+        audio.play().catch(() => {});
+
+        foodsEatenSession++;
+        unlockAchievement("first_eat");
+        if (foodsEatenSession >= 5) unlockAchievement("fast_5");
+        if (snake.length >= 10) unlockAchievement("snake_size_10");
+
+        let x = randomPosition();
+        let y = randomPosition();
+        while (snake.find((pos) => pos.x == x && pos.y == y)) {
+            x = randomPosition();
+            y = randomPosition();
+        }
+
+        food.x = x;
+        food.y = y;
+        food.profile = foodProfiles[randomNumber(0, foodProfiles.length - 1)];
+    }
+};
+
+const checkCollision = () => {
+    const head = snake[snake.length - 1];
+    const canvasLimit = canvas.width - size;
+    const neckIndex = snake.length - 2;
+
+    const wallCollision = head.x > canvasLimit || head.x < 0 || head.y < 0 || head.y > canvasLimit;
+    const selfCollision = snake.find((pos, index) => index < neckIndex && pos.x == head.x && pos.y == head.y);
+
+    if (wallCollision || selfCollision) gameOver();
+};
+
+const gameOver = () => {
+    isGameRunning = false;
+    buttonPauseHud.style.display = "none";
+    direction = undefined;
+    menu.style.display = "flex";
+    finalScore.innerText = score.innerText;
+    stopBgMusic();
+};
+
+const resetGame = () => {
+    score.innerText = "00";
+    foodsEatenSession = 0;
+    menu.style.display = "none";
+    startScreen.style.display = "none";
+    pauseScreen.style.display = "none";
+    buttonPauseHud.style.display = "flex";
+    
+    snake = [
+        { x: 270, y: 240 },
+        { x: 300, y: 240 },
+        { x: 330, y: 240 }
+    ];
+    direction = undefined;
+    isPaused = false;
+    isGameRunning = true;
+    playBgMusic();
+};
+
+const pauseGame = () => {
+    if (!isGameRunning) return;
+    isPaused = true;
+    pauseScreen.style.display = "flex";
+    bgMusic.pause();
+};
+
+const resumeGame = () => {
+    isPaused = false;
+    pauseScreen.style.display = "none";
+    bgMusic.play().catch(() => {});
+};
+
+const quitToMenu = () => {
+    isGameRunning = false;
+    isPaused = false;
+    pauseScreen.style.display = "none";
+    menu.style.display = "none";
+    buttonPauseHud.style.display = "none";
+    startScreen.style.display = "flex";
+    stopBgMusic();
+};
+
+const gameLoop = () => {
+    clearInterval(loopID);
+    ctx.clearRect(0, 0, 600, 600);
+
+    drawGrid();
+    drawFood();
+
+    if (isGameRunning && !isPaused) {
+        moveSnake();
+        checkEat();
+        checkCollision();
+    }
+
+    drawSnake();
+
+    loopID = setTimeout(() => {
+        gameLoop();
+    }, 100);
+};
+
+// Listeners de Eventos
+buttonStart.addEventListener("click", resetGame);
+buttonPlay.addEventListener("click", resetGame);
+
+buttonPauseHud.addEventListener("click", pauseGame);
+buttonResume.addEventListener("click", resumeGame);
+buttonsQuitToMenu.forEach(btn => btn.addEventListener("click", quitToMenu));
+
+buttonOpenSkins.addEventListener("click", () => {
+    renderSkinsMenu();
+    startScreen.style.display = "none";
+    skinsScreen.style.display = "flex";
+});
+
+buttonOpenAchievements.addEventListener("click", () => {
+    renderAchievementsList();
+    startScreen.style.display = "none";
+    achievementsScreen.style.display = "flex";
+});
+
+buttonsCloseOverlay.forEach(btn => {
+    btn.addEventListener("click", () => {
+        skinsScreen.style.display = "none";
+        achievementsScreen.style.display = "none";
+        startScreen.style.display = "flex";
+    });
+});
+
+// Controles por Teclado
+document.addEventListener("keydown", ({ key }) => {
+    if (key === "p" || key === "P" || key === "Escape") {
+        if (isGameRunning) {
+            if (isPaused) resumeGame();
+            else pauseGame();
+        }
+    }
+
+    if (!isGameRunning || isPaused) return;
+
+    if (key == "ArrowRight" && direction !== "left") direction = "right";
+    if (key == "ArrowLeft" && direction !== "right") direction = "left";
+    if (key == "ArrowUp" && direction !== "down") direction = "up";
+    if (key == "ArrowDown" && direction !== "up") direction = "down";
+});
+
+// Controles Touch / Swipe
+let touchStartX = 0;
+let touchStartY = 0;
+
+document.addEventListener("touchstart", (e) => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener("touchmove", (e) => {
+    if (isGameRunning && !isPaused) e.preventDefault();
+}, { passive: false });
+
+document.addEventListener("touchend", (e) => {
+    if (!isGameRunning || isPaused || !touchStartX || !touchStartY) return;
+
+    let diffX = e.changedTouches[0].clientX - touchStartX;
+    let diffY = e.changedTouches[0].clientY - touchStartY;
+
+    if (Math.abs(diffX) > 30 || Math.abs(diffY) > 30) {
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            if (diffX > 0 && direction !== "left") direction = "right";
+            else if (diffX < 0 && direction !== "right") direction = "left";
+        } else {
+            if (diffY > 0 && direction !== "up") direction = "down";
+            else if (diffY < 0 && direction !== "down") direction = "up";
+        }
+    }
+    touchStartX = 0;
+    touchStartY = 0;
+}, { passive: true });
+
+// Controles D-Pad
+const dpadButtons = document.querySelectorAll(".dpad-btn");
+const setDirection = (dir) => {
+    if (!isGameRunning || isPaused) return;
+    if (dir === "right" && direction !== "left") direction = "right";
+    if (dir === "left" && direction !== "right") direction = "left";
+    if (dir === "up" && direction !== "down") direction = "up";
+    if (dir === "down" && direction !== "up") direction = "down";
+};
+
+dpadButtons.forEach((btn) => {
+    btn.addEventListener("touchstart", (e) => {
+        e.preventDefault();
+        setDirection(btn.dataset.dir);
+    }, { passive: false });
+    btn.addEventListener("click", () => setDirection(btn.dataset.dir));
+});
+
+// Inicialização
+loadAchievements();
+gameLoop();
+    </script>
+</body>
+</html>
