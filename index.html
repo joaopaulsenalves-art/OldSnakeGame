@@ -850,6 +850,7 @@ const unlockAchievement = (id) => {
     if (ach && !ach.unlocked) {
         ach.unlocked = true;
         saveAchievements();
+        salvarProgresso();   
         showToast(ach.title);
         renderAchievementsList();
     }
@@ -952,6 +953,7 @@ const renderSkinsMenu = () => {
         card.addEventListener("click", () => {
             currentSkinIndex = index;
             renderSkinsMenu();
+            salvarProgresso();
             unlockAchievement("skin_change");
         });
 
@@ -1221,6 +1223,9 @@ const checkCollision = () => {
 
 const gameOver = () => {
     isGameRunning = false;
+    const pontos = +score.innerText;                                   // <- NOVO
+    if (pontos > recorde) recorde = pontos;                            // <- NOVO
+    if (progresso) progresso.salvarAgora(GAME_ID, montarEstado());     // <- NOVO
     buttonPauseHud.style.display = "none";
     direction = undefined;
     menu.style.display = "flex";
@@ -1387,6 +1392,7 @@ dpadButtons.forEach((btn) => {
 
 // Inicialização
 loadAchievements();
+iniciarProgresso();
 gameLoop();
     </script>
 </body>
