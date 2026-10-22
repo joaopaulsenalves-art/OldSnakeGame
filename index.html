@@ -867,6 +867,53 @@ const showToast = (name) => {
     }, 3500);
 };
 
+ // ==================== PROGRESSO NA NUVEM (Supabase) ====================
+const GAME_ID = "snake";
+const URL_PROGRESSO = "https://joaopaulsenalves-art.github.io/Hub-do-Jhows/progress.js";
+
+let progresso = null; // continua null se a nuvem não estiver disponível
+let recorde = 0;
+
+const montarEstado = () => {
+    const conquistas = {};
+    achievementsData.forEach(a => { if (a.unlocked) conquistas[a.id] = true; });
+    return { schemaVersion: 1, conquistas, skinIndex: currentSkinIndex, recorde };
+};
+
+const salvarProgresso = () => {
+    if (progresso) progresso.salvar(GAME_ID, montarEstado());
+};
+
+// Aplica o progresso carregado. Valida tudo, porque o dado vem de fora do jogo.
+const aplicarEstado = (estado) => {
+    if (!estado || typeof estado !== "object") return;
+
+    // Conquistas: união. Uma conquista já ganha nunca é perdida.
+    const c = estado.conquistas || {};
+    achievementsData.forEach(a => { if (c[a.id] === true) a.unlocked = true; });
+    saveAchievements(); // mantém a cópia local do jogo igual
+
+    if (Number.isInteger(estado.skinIndex) && skins[estado.skinIndex]) {
+        currentSkinIndex = estado.skinIndex;
+    }
+    if (Number.isFinite(estado.recorde)) {
+        recorde = Math.max(recorde, estado.recorde);
+    }
+    renderAchievementsList();
+};
+
+const iniciarProgresso = async () => {
+    try {
+        progresso = await import(URL_PROGRESSO);
+        const salvo = await progresso.carregar(GAME_ID);
+        aplicarEstado(salvo);
+        salvarProgresso(); // sobe à nuvem o que já existia só no aparelho
+    } catch (e) {
+        progresso = null;
+        console.warn("Progresso na nuvem indisponível, usando só o aparelho:", e);
+    }
+};       
+
 // ==================== HELPERS DE DESENHO ====================
 const roundedRectPath = (ctx, x, y, w, h, r) => {
     ctx.beginPath();
